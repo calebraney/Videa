@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const gsapInit = function () {
     //first interactions
     lenis = initLenis();
-    pageTransition();
+    // pageTransition();
     //match media interactions
     let mm = gsap.matchMedia();
     mm.add(
@@ -66,17 +66,17 @@ document.addEventListener('DOMContentLoaded', function () {
         //conditional interactions (if reduce motion is off)
         if (!reduceMotion) {
           countUp();
-          loop();
-          textScrub();
-          mouseOver();
+          // loop();
+          // textScrub();
+          // mouseOver();
           parallax();
           scrollIn();
           scrolling();
-          pathHover();
-          scrollProgress();
-          magnetic();
-          imageSwitch();
-          banner();
+          // pathHover();
+          // scrollProgress();
+          // magnetic();
+          // imageSwitch();
+          // banner();
           logoSwitch();
           typeText();
         }
@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function () {
     );
     //other interactions
     marquee();
-    textLinks();
+    // textLinks();
     slider();
     tabs();
     activate();
