@@ -151,7 +151,11 @@ export const activate = function () {
         const makeActive = config.breakpointState === 'active';
         items.forEach((item) => activateItem(item, makeActive));
       } else {
-        items.forEach((item) => activateItem(item, false));
+        items.forEach((item) => {
+          const startActive = attr(false, item.getAttribute(OPTION_START_ACTIVE));
+          activateItem(item, startActive);
+        });
+        if (config.firstActive) activateItem(items[0]);
       }
     });
   };
