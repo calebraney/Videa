@@ -31,9 +31,11 @@ export const flipText = function () {
         ease: 'power2.inOut',
         repeat: false,
         perspective: 600,
-        rotate: 0,
-        padding: 0, // in em
-        animateTogether: false,
+        rotate: 90,
+        padding: 1.2, // in em
+        animateTogether: true,
+        direction: 'down', // 'up' or 'down'
+        y: 1, // travel distance in em (0 = auto)
       });
 
       // build phrases — prefer the data attribute, fall back to child phrase elements
@@ -67,8 +69,9 @@ export const flipText = function () {
       let maxHeight = 0;
       phrases.forEach((phrase) => {
         textEl.textContent = phrase;
-        maxHeight = Math.max(maxHeight, textEl.offsetHeight);
+        maxHeight = Math.max(maxHeight, textEl.getBoundingClientRect().height);
       });
+      console.log(`maxHeight: ${maxHeight}px`);
 
       const pad = config.padding;
       stage.style.height = `${maxHeight}px`;
@@ -78,7 +81,14 @@ export const flipText = function () {
       stage.style.marginBottom = `-${pad}em`;
       // Read computed padding in px (em resolved by browser) so yDist is accurate
       const padPx = parseFloat(getComputedStyle(stage).paddingTop);
-      const yDist = maxHeight + padPx;
+      const autoYDist = maxHeight + padPx;
+      // If y option is set, convert em to px and use whichever is larger so text
+      // always fully clears the clip regardless of phrase length
+      const customYPx = config.y > 0 ? config.y * parseFloat(getComputedStyle(textEl).fontSize) : 0;
+      const yDist = customYPx > 0 ? customYPx : autoYDist;
+      // direction: 'up' exits upward (-), enters from below (+)
+      //            'down' exits downward (+), enters from above (-)
+      const dirMult = config.direction === 'down' ? 1 : -1;
 
       // Show first phrase at rest
       textEl.textContent = phrases[0];
@@ -101,8 +111,9 @@ export const flipText = function () {
           if (shouldContinue) {
             gsap.delayedCall(config.hold, animateNext);
           } else {
-            stage.parentNode.insertBefore(textEl, stage);
-            stage.remove();
+            stage.style.height = 'auto';
+            stage.replaceWith(textEl);
+            gsap.set(textEl, { clearProps: 'transform,opacity' });
           }
         };
 
@@ -111,12 +122,13 @@ export const flipText = function () {
           const nextEl = textEl.cloneNode(false);
           nextEl.textContent = phrases[nextIndex];
           nextEl.style.position = 'absolute';
-          nextEl.style.top = '0';
+          nextEl.style.top = `${padPx}px`;
           nextEl.style.left = '0';
+          nextEl.style.right = '0';
           stage.appendChild(nextEl);
           gsap.set(nextEl, {
-            y: yDist,
-            rotateX: -config.rotate,
+            y: -dirMult * yDist,
+            rotateX: dirMult * config.rotate,
             opacity: 0,
             transformPerspective: config.perspective,
             transformOrigin: 'center center',
@@ -135,8 +147,8 @@ export const flipText = function () {
           tl.to(
             textEl,
             {
-              y: -yDist,
-              rotateX: config.rotate,
+              y: dirMult * yDist,
+              rotateX: -dirMult * config.rotate,
               opacity: 0,
               duration: config.duration,
               ease: config.ease,
@@ -151,20 +163,20 @@ export const flipText = function () {
         } else {
           const tl = gsap.timeline({ onComplete });
 
-          // Current phrase rotates and moves up, fading out
+          // Current phrase exits in the direction, next enters from the opposite side
           tl.to(textEl, {
-            y: -yDist,
-            rotateX: config.rotate,
+            y: dirMult * yDist,
+            rotateX: -dirMult * config.rotate,
             opacity: 0,
             duration: config.duration,
             ease: config.ease,
           });
 
-          // Swap text and position next phrase below
+          // Swap text and position next phrase on the opposite side
           tl.call(() => {
             textEl.textContent = phrases[nextIndex];
           });
-          tl.set(textEl, { y: yDist, rotateX: -config.rotate, opacity: 0 });
+          tl.set(textEl, { y: -dirMult * yDist, rotateX: dirMult * config.rotate, opacity: 0 });
 
           // Next phrase rotates in from below, fading in
           tl.to(textEl, {
